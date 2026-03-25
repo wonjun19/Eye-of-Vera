@@ -1,12 +1,27 @@
+import os
+import sys
+
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication, QInputDialog
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QAction
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# 아이콘 경로 (PyInstaller 빌드 / 개발 환경 모두 지원)
+_ICON_DIR = os.path.join(
+    getattr(sys, '_MEIPASS', os.path.abspath('.')),
+    'assets', 'icons',
+)
 
-def _make_default_icon() -> QIcon:
-    """베라 아이콘이 없을 경우 생성하는 간단한 원형 아이콘."""
+
+def _load_icon() -> QIcon:
+    """아이콘 파일을 로드한다. 없으면 기본 아이콘을 생성한다."""
+    for name in ('Eye_Of_Vera.ico', 'Eye_Of_Vera.png'):
+        path = os.path.join(_ICON_DIR, name)
+        if os.path.isfile(path):
+            return QIcon(path)
+
+    # fallback: 기본 원형 아이콘
     px = QPixmap(64, 64)
     px.fill(QColor(0, 0, 0, 0))
     painter = QPainter(px)
@@ -28,15 +43,22 @@ class TrayMenu:
     """시스템 트레이 아이콘 + 메뉴 관리."""
 
     def __init__(self, app: QApplication, on_mission_change=None,
-                 on_pause_resume=None, on_report=None, on_quit=None):
+                 on_pause_resume=None, on_report=None, on_chat=None,
+                 on_settings=None, on_logs=None, on_quit=None,
+                 on_free_mode_toggle=None):
         self._app = app
         self._on_mission_change = on_mission_change
         self._on_pause_resume = on_pause_resume
         self._on_report = on_report
+        self._on_chat = on_chat
+        self._on_settings = on_settings
+        self._on_logs = on_logs
         self._on_quit = on_quit
+        self._on_free_mode_toggle = on_free_mode_toggle
         self._paused = False
+        self._free_mode = False
 
-        self._tray = QSystemTrayIcon(_make_default_icon(), parent=None)
+        self._tray = QSystemTrayIcon(_load_icon(), parent=None)
         self._tray.setToolTip("Eye of Vera")
         self._build_menu()
         self._tray.show()
@@ -49,12 +71,32 @@ class TrayMenu:
         mission_action.triggered.connect(self._change_mission)
         menu.addAction(mission_action)
 
+        # 베라와 대화
+        chat_action = QAction("베라와 대화", menu)
+        chat_action.triggered.connect(self._open_chat)
+        menu.addAction(chat_action)
+
+        # 정찰 기록
+        logs_action = QAction("정찰 기록", menu)
+        logs_action.triggered.connect(self._open_logs)
+        menu.addAction(logs_action)
+
         # 주간 결산
         report_action = QAction("주간 결산", menu)
         report_action.triggered.connect(self._open_report)
         menu.addAction(report_action)
 
+        # 설정
+        settings_action = QAction("설정", menu)
+        settings_action.triggered.connect(self._open_settings)
+        menu.addAction(settings_action)
+
         menu.addSeparator()
+
+        # 자유 상호작용 모드
+        self._free_mode_action = QAction("자유 상호작용 모드", menu)
+        self._free_mode_action.triggered.connect(self._toggle_free_mode)
+        menu.addAction(self._free_mode_action)
 
         # 일시 정지 / 재개
         self._pause_action = QAction("일시 정지", menu)
@@ -89,6 +131,34 @@ class TrayMenu:
             logger.info("스케줄러 재개")
         if self._on_pause_resume:
             self._on_pause_resume(self._paused)
+
+    def _toggle_free_mode(self):
+        self._free_mode = not self._free_mode
+        if self._free_mode:
+            self._free_mode_action.setText("정찰 모드로 복귀")
+            self._pause_action.setEnabled(False)
+            logger.info("자유 상호작용 모드 활성화")
+        else:
+            self._free_mode_action.setText("자유 상호작용 모드")
+            self._pause_action.setEnabled(True)
+            logger.info("자유 상호작용 모드 비활성화")
+        if self._on_free_mode_toggle:
+            self._on_free_mode_toggle(self._free_mode)
+
+    def _open_chat(self):
+        logger.info("채팅 패널 열기")
+        if self._on_chat:
+            self._on_chat()
+
+    def _open_logs(self):
+        logger.info("정찰 기록 열기")
+        if self._on_logs:
+            self._on_logs()
+
+    def _open_settings(self):
+        logger.info("설정 패널 열기")
+        if self._on_settings:
+            self._on_settings()
 
     def _open_report(self):
         logger.info("주간 결산 열기")

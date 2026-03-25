@@ -66,14 +66,17 @@ class Database:
         counts = {r["status"]: r["cnt"] for r in rows}
 
         focus = counts.get("FOCUS", 0)
+        relax = counts.get("RELAX", 0)
+        deviation = counts.get("DEVIATION", 0)
+        valid = focus + relax + deviation
         return {
             "date": date,
             "total": total,
             "focus": focus,
-            "relax": counts.get("RELAX", 0),
-            "deviation": counts.get("DEVIATION", 0),
+            "relax": relax,
+            "deviation": deviation,
             "unknown": counts.get("UNKNOWN", 0),
-            "focus_rate": round(focus / total * 100, 1) if total > 0 else 0.0,
+            "focus_rate": round(focus / valid * 100, 1) if valid > 0 else 0.0,
         }
 
     def get_weekly_summary(self) -> list[dict]:
@@ -97,6 +100,51 @@ class Database:
         ).fetchall()
 
         return {r["hour"]: r["cnt"] for r in rows}
+
+    def get_recent_logs(self, limit: int = 5) -> list[dict]:
+        """최근 분석 로그 N건을 반환한다."""
+        rows = self._conn.execute(
+            "SELECT timestamp, status, detected_activity, message "
+            "FROM logs ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def build_chat_context(self) -> str:
+        """채팅에 주입할 전술 데이터 문자열을 생성한다."""
+        daily = self.get_daily_summary()
+        weekly = self.get_weekly_summary()
+        recent = self.get_recent_logs(5)
+
+        lines = []
+
+        # 오늘 요약
+        if daily["total"] > 0:
+            lines.append(f"### 오늘({daily['date']}) 요약")
+            lines.append(f"- 총 정찰 {daily['total']}회 | "
+                         f"집중 {daily['focus']}회 · 휴식 {daily['relax']}회 · "
+                         f"이탈 {daily['deviation']}회")
+            lines.append(f"- 집중률: {daily['focus_rate']}%")
+        else:
+            lines.append("### 오늘 요약")
+            lines.append("- 아직 정찰 기록이 없습니다.")
+
+        # 주간 추세
+        active_days = [d for d in weekly if d["total"] > 0]
+        if active_days:
+            lines.append("\n### 최근 7일 추세")
+            for d in active_days:
+                lines.append(f"- {d['date']}: 집중률 {d['focus_rate']}% "
+                             f"({d['total']}회 정찰)")
+
+        # 최근 로그
+        if recent:
+            lines.append("\n### 최근 정찰 기록")
+            for log in recent:
+                ts = log["timestamp"][11:16]  # HH:MM
+                lines.append(f"- [{ts}] {log['status']} — {log['detected_activity']}")
+
+        return "\n".join(lines)
 
     def close(self):
         self._conn.close()
