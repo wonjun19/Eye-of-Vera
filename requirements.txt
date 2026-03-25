@@ -1,1 +1,6 @@
-# 의존성 라이브러리 목록
+PyQt6>=6.6.0
+google-genai>=1.0.0
+PyAutoGUI>=0.9.54
+Pillow>=10.0.0
+python-dotenv>=1.0.0
+APScheduler>=3.10.0
