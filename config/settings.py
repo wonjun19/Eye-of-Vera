@@ -5,7 +5,7 @@ load_dotenv()
 
 # Gemini API
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
 
 # 캡처 주기 (분)
 CAPTURE_INTERVAL_MINUTES = int(os.getenv("CAPTURE_INTERVAL_MINUTES", "5"))

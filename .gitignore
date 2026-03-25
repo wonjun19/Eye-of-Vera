@@ -17,3 +17,19 @@ logs/
 # OS
 Thumbs.db
 Desktop.ini
+.DS_Store
+
+# Python packaging
+*.egg-info/
+
+
+# Build and Distribution
+build/
+dist/
+*.spec
+
+# Local Configs
+config/user_config.json
+
+# Tool Specific
+.claude/
