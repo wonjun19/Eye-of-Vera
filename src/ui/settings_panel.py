@@ -14,6 +14,7 @@ from src.core.knowledge import (
     delete_knowledge_file, update_tags,
 )
 from src.ui.design import FONT_MONO, FONT_UI
+from src.core.audio import DialoguePlayer
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -120,9 +121,10 @@ class SettingsPanel(QWidget):
 
     settings_saved = pyqtSignal()
 
-    def __init__(self, config: UserConfig | None = None):
+    def __init__(self, config: UserConfig | None = None, dialogue_player: DialoguePlayer | None = None):
         super().__init__()
         self._config = config or get_config()
+        self._dialogue_player = dialogue_player
         self._init_ui()
         self._load_to_ui()
 
@@ -153,6 +155,7 @@ class SettingsPanel(QWidget):
         self._tabs.addTab(self._build_monitoring_tab(), "정찰 설정")
         self._tabs.addTab(self._build_prompt_tab(),     "프롬프트 편집")
         self._tabs.addTab(self._build_knowledge_tab(),  "지식 관리")
+        self._tabs.addTab(self._build_audio_tab(),      "음성")
         self._tabs.addTab(self._build_appearance_tab(), "외형")
         root.addWidget(self._tabs, stretch=1)
 
@@ -409,7 +412,68 @@ class SettingsPanel(QWidget):
         self._knowledge_files[row]["tags"] = tags
 
     # ────────────────────────────────────
-    # 탭 4: 외형
+    # 탭 4: 음성
+    # ────────────────────────────────────
+
+    def _build_audio_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(12)
+
+        # 음성 활성화
+        grp1 = QGroupBox("음성 대사")
+        vbox1 = QVBoxLayout(grp1)
+        self._audio_enabled = QCheckBox("음성 대사 활성화")
+        vbox1.addWidget(self._audio_enabled)
+
+        hint = QLabel("분석 결과에 따라 베라의 음성 대사가 재생됩니다.\n"
+                       "FOCUS(집중) · DEVIATION(이탈) 상태에서만 재생되며,\n"
+                       "RELAX(휴식) 상태에서는 재생되지 않습니다.")
+        hint.setStyleSheet(f"color: #888; font-size: 9px; font-family: {FONT_MONO};")
+        vbox1.addWidget(hint)
+        layout.addWidget(grp1)
+
+        # 볼륨
+        grp2 = QGroupBox("음성 크기")
+        vbox2 = QVBoxLayout(grp2)
+        vol_row = QHBoxLayout()
+        self._volume_slider = QSlider(Qt.Orientation.Horizontal)
+        self._volume_slider.setRange(0, 100)
+        self._volume_label = QLabel("70%")
+        self._volume_slider.valueChanged.connect(
+            lambda v: self._volume_label.setText(f"{v}%")
+        )
+        vol_row.addWidget(self._volume_slider, stretch=1)
+        vol_row.addWidget(self._volume_label)
+        vbox2.addLayout(vol_row)
+
+        # 테스트 버튼
+        self._audio_test_btn = QPushButton("음성 크기 테스트  ▶")
+        self._audio_test_btn.setObjectName("secondary")
+        self._audio_test_btn.setFixedWidth(160)
+        self._audio_test_btn.clicked.connect(self._test_audio)
+        vbox2.addWidget(self._audio_test_btn)
+        layout.addWidget(grp2)
+
+        # 연결: 활성화 체크박스로 볼륨 슬라이더/테스트 버튼 활성화 제어
+        self._audio_enabled.toggled.connect(self._volume_slider.setEnabled)
+        self._audio_enabled.toggled.connect(self._audio_test_btn.setEnabled)
+
+        layout.addStretch()
+        return tab
+
+    def _test_audio(self):
+        """현재 슬라이더 볼륨으로 테스트 대사를 재생한다."""
+        # 슬라이더 값을 임시로 설정에 반영
+        cfg = self._config
+        cfg.set("audio", "volume", self._volume_slider.value())
+        cfg.set("audio", "enabled", True)
+
+        if self._dialogue_player:
+            self._dialogue_player.play_test()
+
+    # ────────────────────────────────────
+    # 탭 5: 외형
     # ────────────────────────────────────
 
     def _build_appearance_tab(self) -> QWidget:
@@ -503,6 +567,12 @@ class SettingsPanel(QWidget):
         self._knowledge_files = []
         self._refresh_knowledge_list()
 
+        # 음성
+        self._audio_enabled.setChecked(cfg.get("audio", "enabled"))
+        self._volume_slider.setValue(cfg.get("audio", "volume"))
+        self._volume_slider.setEnabled(cfg.get("audio", "enabled"))
+        self._audio_test_btn.setEnabled(cfg.get("audio", "enabled"))
+
         # 외형
         theme_id = cfg.get("appearance", "theme")
         tidx = self._theme_combo.findData(theme_id)
@@ -553,6 +623,10 @@ class SettingsPanel(QWidget):
             if item.checkState() == Qt.CheckState.Checked:
                 enabled.append(item.text())
         cfg.set("knowledge", "enabled_files", enabled)
+
+        # 음성
+        cfg.set("audio", "enabled", self._audio_enabled.isChecked())
+        cfg.set("audio", "volume", self._volume_slider.value())
 
         # 외형
         cfg.set("appearance", "theme", self._theme_combo.currentData())
