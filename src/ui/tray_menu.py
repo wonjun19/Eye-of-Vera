@@ -3,6 +3,7 @@ import sys
 
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication, QInputDialog
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QAction
+from src.ui.design import FONT_MONO
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,13 +28,12 @@ def _load_icon() -> QIcon:
     painter = QPainter(px)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     painter.setBrush(QColor("#5c6bc0"))
-    painter.setPen(QColor("#ffffff"))
+    painter.setPen(QColor("#e0e0e0"))
     painter.drawEllipse(4, 4, 56, 56)
-    painter.setPen(QColor("#ffffff"))
-    font = painter.font()
-    font.setPixelSize(28)
-    font.setBold(True)
+    from PyQt6.QtGui import QFont
+    font = QFont(FONT_MONO, 20, QFont.Weight.Bold)
     painter.setFont(font)
+    painter.setPen(QColor("#e0e0e0"))
     painter.drawText(px.rect(), 0x0084, "V")  # AlignCenter
     painter.end()
     return QIcon(px)

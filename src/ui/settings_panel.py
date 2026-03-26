@@ -13,69 +13,100 @@ from src.core.knowledge import (
     load_knowledge_files, add_knowledge_file,
     delete_knowledge_file, update_tags,
 )
+from src.ui.design import FONT_MONO, FONT_UI
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# ── 선택 가능한 Gemini 모델 ──
-
 GEMINI_MODELS = [
     ("gemini-3.1-flash-lite-preview", "Gemini 3.1 Flash Lite (기본)"),
-    ("gemini-3-flash-preview", "Gemini 3 Flash"),
-    ("gemini-2.5-flash", "Gemini 2.5 Flash"),
-    ("gemini-3.1-pro-preview", "Gemini 3.1 Pro"),
+    ("gemini-3-flash-preview",        "Gemini 3 Flash"),
+    ("gemini-2.5-flash",              "Gemini 2.5 Flash"),
+    ("gemini-3.1-pro-preview",        "Gemini 3.1 Pro"),
 ]
 
-# ── 공통 스타일 ──
-
 PANEL_STYLE = """
-QWidget {{ background: {bg}; color: {text}; }}
-QTabWidget::pane {{ border: 1px solid {border}; background: {bg}; }}
+QWidget {{ background: {bg}; color: {text}; font-family: "맑은 고딕", sans-serif; }}
+QTabWidget::pane {{
+    border: 1px solid {border}; border-radius: 0 6px 6px 6px; background: {bg};
+}}
 QTabBar::tab {{
     background: {input_bg}; color: {text};
-    padding: 8px 16px; border: 1px solid {sub_border};
-    border-bottom: none; border-top-left-radius: 4px; border-top-right-radius: 4px;
+    padding: 9px 18px; margin-right: 2px;
+    border: 1px solid {sub_border};
+    border-bottom: none;
+    border-top-left-radius: 6px; border-top-right-radius: 6px;
+    font-family: Consolas; font-size: 9pt;
 }}
-QTabBar::tab:selected {{ background: {bg}; border-bottom: 2px solid {border}; }}
-QGroupBox {{
-    color: {border}; border: 1px solid {sub_border};
-    border-radius: 6px; margin-top: 12px; padding-top: 16px;
+QTabBar::tab:selected {{
+    background: {bg}; color: {border};
+    border-color: {border}; border-bottom: 2px solid {bg};
     font-weight: bold;
 }}
-QGroupBox::title {{ subcontrol-origin: margin; left: 12px; padding: 0 4px; }}
+QTabBar::tab:hover:!selected {{ background: {bg}; }}
+QGroupBox {{
+    color: {border}; border: 1px solid {sub_border};
+    border-radius: 8px; margin-top: 14px; padding-top: 18px;
+    font-family: Consolas; font-weight: bold; font-size: 9pt;
+}}
+QGroupBox::title {{
+    subcontrol-origin: margin; left: 14px; padding: 0 6px;
+    background: {bg};
+}}
 QSpinBox, QComboBox, QLineEdit {{
     background: {input_bg}; color: {text};
-    border: 1px solid {sub_border}; border-radius: 4px; padding: 4px 8px;
-    min-height: 24px;
+    border: 1px solid {sub_border}; border-radius: 5px;
+    padding: 5px 9px; min-height: 26px;
+}}
+QSpinBox:focus, QComboBox:focus, QLineEdit:focus {{
+    border-color: {border};
 }}
 QTextEdit {{
     background: {input_bg}; color: {text};
-    border: 1px solid {sub_border}; border-radius: 4px; padding: 4px;
+    border: 1px solid {sub_border}; border-radius: 5px; padding: 6px;
 }}
-QCheckBox {{ color: {text}; spacing: 6px; }}
-QCheckBox::indicator {{ width: 16px; height: 16px; }}
+QTextEdit:focus {{ border-color: {border}; }}
+QCheckBox {{ color: {text}; spacing: 8px; }}
+QCheckBox::indicator {{
+    width: 15px; height: 15px;
+    border: 1px solid {sub_border}; border-radius: 3px;
+    background: {input_bg};
+}}
+QCheckBox::indicator:checked {{
+    background: {border}; border-color: {border};
+}}
 QPushButton {{
     background: {border}; color: white; border: none;
-    border-radius: 4px; padding: 8px 16px; font-weight: bold;
+    border-radius: 5px; padding: 8px 18px; font-weight: bold;
+    font-family: Consolas;
 }}
 QPushButton:hover {{ background: {hover}; }}
-QPushButton#danger {{ background: #c62828; }}
-QPushButton#danger:hover {{ background: #e53935; }}
-QPushButton#secondary {{ background: {sub_border}; }}
-QPushButton#secondary:hover {{ background: {input_bg}; }}
-QSlider::groove:horizontal {{ background: {sub_border}; height: 4px; border-radius: 2px; }}
+QPushButton:pressed {{ background: {sub_border}; }}
+QPushButton#danger {{ background: #b71c1c; border: 1px solid #e53935; }}
+QPushButton#danger:hover {{ background: #c62828; }}
+QPushButton#secondary {{
+    background: transparent; color: {text};
+    border: 1px solid {sub_border};
+}}
+QPushButton#secondary:hover {{ background: {input_bg}; border-color: {border}; }}
+QSlider::groove:horizontal {{
+    background: {sub_border}; height: 4px; border-radius: 2px;
+}}
 QSlider::handle:horizontal {{
     background: {border}; width: 14px; height: 14px;
     margin: -5px 0; border-radius: 7px;
 }}
+QSlider::handle:horizontal:hover {{ background: {hover}; }}
 QListWidget {{
     background: {input_bg}; color: {text};
-    border: 1px solid {sub_border}; border-radius: 4px;
+    border: 1px solid {sub_border}; border-radius: 5px;
+    outline: 0;
 }}
-QListWidget::item {{ padding: 4px; }}
-QListWidget::item:selected {{ background: {bg}; }}
+QListWidget::item {{ padding: 6px 8px; border-radius: 3px; }}
+QListWidget::item:selected {{ background: {sub_border}; color: {text}; }}
+QListWidget::item:hover:!selected {{ background: {bg}; }}
 QScrollBar:vertical {{
-    background: {input_bg}; width: 8px; border: none;
+    background: {input_bg}; width: 7px; border: none;
 }}
 QScrollBar::handle:vertical {{
     background: {sub_border}; border-radius: 4px; min-height: 20px;
@@ -99,8 +130,8 @@ class SettingsPanel(QWidget):
 
     def _init_ui(self):
         self.setWindowTitle("VERA — 설정")
-        self.setMinimumSize(520, 500)
-        self.resize(560, 620)
+        self.setMinimumSize(540, 520)
+        self.resize(580, 640)
         self.setWindowFlags(
             Qt.WindowType.WindowCloseButtonHint
             | Qt.WindowType.WindowTitleHint
@@ -109,14 +140,19 @@ class SettingsPanel(QWidget):
         self._apply_style()
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
-        root.setSpacing(10)
+        root.setContentsMargins(16, 14, 16, 14)
+        root.setSpacing(12)
+
+        # 헤더 라벨
+        header = QLabel("VERA — 설정")
+        header.setFont(QFont(FONT_MONO, 11, QFont.Weight.Bold))
+        root.addWidget(header)
 
         # 탭
         self._tabs = QTabWidget()
         self._tabs.addTab(self._build_monitoring_tab(), "정찰 설정")
-        self._tabs.addTab(self._build_prompt_tab(), "프롬프트 편집")
-        self._tabs.addTab(self._build_knowledge_tab(), "지식 관리")
+        self._tabs.addTab(self._build_prompt_tab(),     "프롬프트 편집")
+        self._tabs.addTab(self._build_knowledge_tab(),  "지식 관리")
         self._tabs.addTab(self._build_appearance_tab(), "외형")
         root.addWidget(self._tabs, stretch=1)
 
@@ -124,8 +160,8 @@ class SettingsPanel(QWidget):
         btn_row = QHBoxLayout()
         btn_row.addStretch()
 
-        self._save_btn = QPushButton("저장")
-        self._save_btn.setFixedWidth(100)
+        self._save_btn = QPushButton("저장  ✓")
+        self._save_btn.setFixedWidth(110)
         self._save_btn.clicked.connect(self._save_from_ui)
         btn_row.addWidget(self._save_btn)
 
@@ -236,19 +272,19 @@ class SettingsPanel(QWidget):
         # 분석 프롬프트
         layout.addWidget(QLabel("분석 프롬프트 (스크린샷 판별):"))
         self._analysis_prompt = QTextEdit()
-        self._analysis_prompt.setFont(QFont("Consolas", 9))
+        self._analysis_prompt.setFont(QFont(FONT_MONO, 9))
         self._analysis_prompt.setMinimumHeight(140)
         layout.addWidget(self._analysis_prompt, stretch=1)
 
         # 대화 프롬프트
         layout.addWidget(QLabel("대화 프롬프트 (채팅):"))
         self._chat_prompt = QTextEdit()
-        self._chat_prompt.setFont(QFont("Consolas", 9))
+        self._chat_prompt.setFont(QFont(FONT_MONO, 9))
         self._chat_prompt.setMinimumHeight(140)
         layout.addWidget(self._chat_prompt, stretch=1)
 
         hint = QLabel("※ {mission}, {context}, {knowledge}는 자동 치환됩니다.")
-        hint.setStyleSheet("color: #888; font-size: 11px;")
+        hint.setStyleSheet(f"color: #666; font-size: 9px; font-family: {FONT_MONO};")
         layout.addWidget(hint)
 
         return tab
@@ -310,7 +346,7 @@ class SettingsPanel(QWidget):
         layout.addWidget(QLabel("미리보기:"))
         self._knowledge_preview = QTextEdit()
         self._knowledge_preview.setReadOnly(True)
-        self._knowledge_preview.setFont(QFont("Consolas", 9))
+        self._knowledge_preview.setFont(QFont(FONT_MONO, 9))
         self._knowledge_preview.setMaximumHeight(140)
         layout.addWidget(self._knowledge_preview)
 
@@ -417,7 +453,7 @@ class SettingsPanel(QWidget):
         layout.addStretch()
 
         hint = QLabel("※ 테마 변경은 채팅창을 다시 열면 적용됩니다.")
-        hint.setStyleSheet("color: #888; font-size: 11px;")
+        hint.setStyleSheet(f"color: #666; font-size: 9px; font-family: {FONT_MONO};")
         layout.addWidget(hint)
 
         return tab
