@@ -12,6 +12,7 @@ from src.core.knowledge import find_relevant_knowledge
 from src.ui.design import (
     FONT_MONO, FONT_UI, scrollbar_style,
     RADIUS_LG, GAP_SM, GAP_MD, DURATION_FAST,
+    draw_corner_brackets,
 )
 from config.user_config import get_config
 from src.utils.logger import get_logger
@@ -243,14 +244,16 @@ class ChatPanel(QWidget):
         if is_user:
             bubble.setStyleSheet(
                 f"background: {t['user_bubble']}; color: {t['text']};"
-                f" border-radius: 12px; padding: 9px 13px;"
+                f" border-radius: 10px; padding: 9px 14px;"
                 f" border: 1px solid {t['sub_border']};"
+                f" border-right: 3px solid {t['border']};"
             )
         else:
             bubble.setStyleSheet(
                 f"background: {t['vera_bubble']}; color: {t['vera_text']};"
-                f" border-radius: 12px; padding: 9px 13px;"
+                f" border-radius: 10px; padding: 9px 14px;"
                 f" border: 1px solid {t['sub_border']};"
+                f" border-left: 3px solid {t.get('accent', t['border'])};"
             )
 
     # ────────────────────────────────────
@@ -286,7 +289,7 @@ class ChatPanel(QWidget):
         header = QHBoxLayout()
         header.setSpacing(8)
 
-        self._title = QLabel("VERA — 통신 채널")
+        self._title = QLabel("▎ VERA — 통신 채널")
         self._title.setFont(QFont(FONT_MONO, 11, QFont.Weight.Bold))
         header.addWidget(self._title)
         header.addStretch()
@@ -320,7 +323,7 @@ class ChatPanel(QWidget):
 
         # ── Accent Line (헤더 하단 강조선) ──
         self._accent_line = QLabel()
-        self._accent_line.setFixedHeight(2)
+        self._accent_line.setFixedHeight(3)
         self._container_layout.addSpacing(6)
         self._container_layout.addWidget(self._accent_line)
         self._container_layout.addSpacing(6)
@@ -616,9 +619,6 @@ class ChatPanel(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        bg = QColor(self._theme["bg"])
-        bg.setAlphaF(self._bg_opacity)
-
         # 배경 그라디언트 (상단 밝게 → 하단 어둡게)
         grad = QLinearGradient(0, 0, 0, self.height())
         c1 = QColor(self._theme["bg"])
@@ -631,7 +631,13 @@ class ChatPanel(QWidget):
         border = QColor(self._theme["border"])
         border.setAlphaF(min(1.0, self._bg_opacity + 0.1))
 
+        rect = self.rect().adjusted(1, 1, -1, -1)
         painter.setBrush(QBrush(grad))
         painter.setPen(QPen(border, 1.5))
-        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), RADIUS_LG, RADIUS_LG)
+        painter.drawRoundedRect(rect, RADIUS_LG, RADIUS_LG)
+
+        # 코너 브라켓
+        bracket_color = self._theme.get("accent", self._theme["border"])
+        draw_corner_brackets(painter, rect, bracket_color, size=18, width=1.0)
+
         painter.end()

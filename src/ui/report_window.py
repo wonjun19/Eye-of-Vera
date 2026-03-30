@@ -69,17 +69,19 @@ class ReportWindow(QWidget):
         self._focus_bar.setFixedHeight(24)
         self._focus_bar.setStyleSheet("""
             QProgressBar {
-                border: 1px solid #2e2e4e;
+                border: 1px solid #1a3a1a;
                 border-radius: 7px;
-                background: #12122a;
+                background: #0a0f0a;
                 text-align: center;
                 color: #c8e6c9;
                 font-family: Consolas;
                 font-size: 9pt;
+                font-weight: bold;
             }
             QProgressBar::chunk {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #1b5e20, stop:1 #43a047);
+                    stop:0 #1b5e20, stop:0.45 #43a047,
+                    stop:0.55 #43a047, stop:1 #1b5e20);
                 border-radius: 6px;
             }
         """)

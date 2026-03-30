@@ -29,25 +29,26 @@ class _KpiCard(QWidget):
         layout.setSpacing(3)
 
         self._count = QLabel("–")
-        self._count.setFont(QFont(FONT_MONO, 22, QFont.Weight.Bold))
+        self._count.setFont(QFont(FONT_MONO, 24, QFont.Weight.Bold))
         self._count.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._count.setStyleSheet(f"color: {color}; background: transparent;")
 
         self._label = QLabel(label)
         self._label.setFont(QFont(FONT_MONO, 8))
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setStyleSheet(f"color: {color}; background: transparent; letter-spacing: 1px;")
+        self._label.setStyleSheet(f"color: {color}; background: transparent; letter-spacing: 2px;")
 
         layout.addWidget(self._count)
         layout.addWidget(self._label)
 
         self.setStyleSheet(
-            f"background: {bg};"
-            f" border: 1px solid {color}44;"
-            f" border-top: 2px solid {color};"
+            f"background: qlineargradient(x1:0,y1:0,x2:0,y2:1,"
+            f"  stop:0 {color}18, stop:0.15 {bg}, stop:1 {bg});"
+            f" border: 1px solid {color}30;"
+            f" border-top: 3px solid {color};"
             f" border-radius: 8px;"
         )
-        self.setFixedHeight(78)
+        self.setFixedHeight(82)
 
     def set_value(self, n: int):
         self._count.setText(str(n))
@@ -119,17 +120,19 @@ class LogPanel(QWidget):
         self._focus_bar.setFixedHeight(22)
         self._focus_bar.setStyleSheet("""
             QProgressBar {
-                border: 1px solid #2e2e4e;
+                border: 1px solid #1a3a1a;
                 border-radius: 6px;
-                background: #12122a;
+                background: #0a0f0a;
                 text-align: center;
                 color: #c8e6c9;
                 font-family: Consolas;
                 font-size: 9pt;
+                font-weight: bold;
             }
             QProgressBar::chunk {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #2e7d32, stop:1 #43a047);
+                    stop:0 #1b5e20, stop:0.45 #43a047,
+                    stop:0.55 #43a047, stop:1 #1b5e20);
                 border-radius: 5px;
             }
         """)

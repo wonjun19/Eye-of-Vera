@@ -88,3 +88,42 @@ def scrollbar_style(bg: str, handle: str) -> str:
         f"QScrollBar::handle:vertical {{ background: {handle}; border-radius: 3px; min-height: 20px; }}"
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
     )
+
+
+# ── 전술 페인터 유틸리티 ──
+
+def draw_corner_brackets(painter, rect, color: str,
+                          size: int = 14, width: float = 1.5):
+    """사각형 네 모서리에 전술 코너 브라켓을 그린다."""
+    from PyQt6.QtGui import QColor, QPen
+    pen = QPen(QColor(color))
+    pen.setWidthF(width)
+    painter.setPen(pen)
+    x1, y1 = rect.left() + 5, rect.top() + 5
+    x2, y2 = rect.right() - 5, rect.bottom() - 5
+    # 좌상단
+    painter.drawLine(x1, y1, x1 + size, y1)
+    painter.drawLine(x1, y1, x1, y1 + size)
+    # 우상단
+    painter.drawLine(x2 - size, y1, x2, y1)
+    painter.drawLine(x2, y1, x2, y1 + size)
+    # 좌하단
+    painter.drawLine(x1, y2, x1 + size, y2)
+    painter.drawLine(x1, y2 - size, x1, y2)
+    # 우하단
+    painter.drawLine(x2 - size, y2, x2, y2)
+    painter.drawLine(x2, y2 - size, x2, y2)
+
+
+def draw_scanlines(painter, rect, opacity: float = 0.025, spacing: int = 3):
+    """반투명 수평 스캔라인 오버레이를 그린다 (CRT 터미널 효과)."""
+    from PyQt6.QtGui import QColor, QPen
+    c = QColor("#ffffff")
+    c.setAlphaF(opacity)
+    pen = QPen(c)
+    pen.setWidthF(0.5)
+    painter.setPen(pen)
+    y = rect.top()
+    while y < rect.bottom():
+        painter.drawLine(rect.left(), int(y), rect.right(), int(y))
+        y += spacing

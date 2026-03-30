@@ -29,7 +29,8 @@ GEMINI_MODELS = [
 PANEL_STYLE = """
 QWidget {{ background: {bg}; color: {text}; font-family: "맑은 고딕", sans-serif; }}
 QTabWidget::pane {{
-    border: 1px solid {border}; border-radius: 0 6px 6px 6px; background: {bg};
+    border: 1px solid {sub_border}; border-radius: 0 6px 6px 6px; background: {bg};
+    border-top: 2px solid {border};
 }}
 QTabBar::tab {{
     background: {input_bg}; color: {text};
@@ -42,6 +43,7 @@ QTabBar::tab {{
 QTabBar::tab:selected {{
     background: {bg}; color: {border};
     border-color: {border}; border-bottom: 2px solid {bg};
+    border-top: 2px solid {border};
     font-weight: bold;
 }}
 QTabBar::tab:hover:!selected {{ background: {bg}; }}
@@ -49,6 +51,7 @@ QGroupBox {{
     color: {border}; border: 1px solid {sub_border};
     border-radius: 8px; margin-top: 14px; padding-top: 18px;
     font-family: Consolas; font-weight: bold; font-size: 9pt;
+    border-left: 2px solid {border};
 }}
 QGroupBox::title {{
     subcontrol-origin: margin; left: 14px; padding: 0 6px;
@@ -69,16 +72,17 @@ QTextEdit {{
 QTextEdit:focus {{ border-color: {border}; }}
 QCheckBox {{ color: {text}; spacing: 8px; }}
 QCheckBox::indicator {{
-    width: 15px; height: 15px;
-    border: 1px solid {sub_border}; border-radius: 3px;
+    width: 16px; height: 16px;
+    border: 1.5px solid {sub_border}; border-radius: 4px;
     background: {input_bg};
 }}
+QCheckBox::indicator:hover {{ border-color: {border}; }}
 QCheckBox::indicator:checked {{
     background: {border}; border-color: {border};
 }}
 QPushButton {{
     background: {border}; color: white; border: none;
-    border-radius: 5px; padding: 8px 18px; font-weight: bold;
+    border-radius: 6px; padding: 8px 18px; font-weight: bold;
     font-family: Consolas;
 }}
 QPushButton:hover {{ background: {hover}; }}
