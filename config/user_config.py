@@ -74,6 +74,10 @@ DEFAULTS = {
     "knowledge": {
         "enabled_files": [],
     },
+    "audio": {
+        "enabled": True,
+        "volume": 70,
+    },
     "appearance": {
         "theme": "dark",
         "default_opacity": 95,

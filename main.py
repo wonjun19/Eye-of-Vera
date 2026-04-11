@@ -5,6 +5,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from src.core.analyzer import Analyzer, AnalysisResult, FreeCommentResult
+from src.core.audio import DialoguePlayer
 from src.core.database import Database
 from src.core.scheduler import Scheduler
 from src.ui.chat_window import ChatWindow
@@ -43,10 +44,11 @@ class VeraApp:
         self._config = get_config()
         self._analyzer = Analyzer()
         self._db = Database()
+        self._dialogue = DialoguePlayer()
         self._chat = ChatWindow()
         self._chat_panel = ChatPanel(self._analyzer, self._db)
         self._report = ReportWindow(self._db)
-        self._settings_panel = SettingsPanel(self._config)
+        self._settings_panel = SettingsPanel(self._config, dialogue_player=self._dialogue)
         self._settings_panel.settings_saved.connect(self._on_settings_saved)
         self._log_panel = LogPanel(self._db)
 
@@ -97,6 +99,7 @@ class VeraApp:
 
     def _handle_result_on_main(self, result: AnalysisResult):
         self._chat.show_result(result)
+        self._dialogue.play_for_status(result.status)
 
     def _on_free_comment(self, result: FreeCommentResult):
         """백그라운드 스레드에서 호출 — 시그널로 메인 스레드에 전달."""

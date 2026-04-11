@@ -4,13 +4,16 @@ from PyQt6.QtGui import QFont, QColor, QPainter, QBrush, QPen, QLinearGradient
 
 from config.settings import OVERLAY_OPACITY, OVERLAY_FADE_SECONDS
 from src.core.analyzer import AnalysisResult
-from src.ui.design import STATUS, FONT_MONO, FONT_UI, PULSE_INTERVAL, DURATION_SLOW, RADIUS_MD
+from src.ui.design import (
+    STATUS, FONT_MONO, FONT_UI, PULSE_INTERVAL, DURATION_SLOW, RADIUS_MD,
+    draw_corner_brackets, draw_scanlines,
+)
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 WINDOW_WIDTH  = 440
-WINDOW_HEIGHT = 172
+WINDOW_HEIGHT = 186
 
 
 class ChatWindow(QWidget):
@@ -66,10 +69,10 @@ class ChatWindow(QWidget):
         header = QHBoxLayout()
         header.setSpacing(8)
 
-        self._vera_label = QLabel("VERA")
-        self._vera_label.setFont(QFont(FONT_MONO, 9, QFont.Weight.Bold))
+        self._vera_label = QLabel("▎ VERA")
+        self._vera_label.setFont(QFont(FONT_MONO, 10, QFont.Weight.Bold))
         self._vera_label.setStyleSheet(
-            "color: #7986cb; letter-spacing: 3px; background: transparent;"
+            "color: #7986cb; letter-spacing: 4px; background: transparent;"
         )
         header.addWidget(self._vera_label)
 
@@ -84,8 +87,8 @@ class ChatWindow(QWidget):
         self._status_badge.setFont(QFont(FONT_MONO, 8, QFont.Weight.Bold))
         self._status_badge.setStyleSheet(
             "color: #9e9e9e; background: #252540;"
-            " border: 1px solid #3a3a5e; border-radius: 3px;"
-            " padding: 2px 8px; letter-spacing: 1px;"
+            " border: 1px solid #3a3a5e; border-radius: 4px;"
+            " padding: 3px 10px; letter-spacing: 2px;"
         )
         header.addWidget(self._status_badge)
         root.addLayout(header)
@@ -108,13 +111,14 @@ class ChatWindow(QWidget):
         # ── Action Block ──
         self._ack_btn = QPushButton("확인  ✓")
         self._ack_btn.setFont(QFont(FONT_MONO, 9, QFont.Weight.Bold))
-        self._ack_btn.setFixedWidth(84)
+        self._ack_btn.setFixedWidth(92)
         self._ack_btn.setStyleSheet(
             "QPushButton {"
             "  background: #b71c1c; color: #ffcdd2;"
-            "  border: 1px solid #ef5350; border-radius: 5px; padding: 5px;"
+            "  border: 1px solid #ef5350; border-radius: 6px;"
+            "  padding: 6px 10px; letter-spacing: 1px;"
             "}"
-            "QPushButton:hover { background: #c62828; color: white; }"
+            "QPushButton:hover { background: #d32f2f; color: white; border-color: #ff5252; }"
         )
         self._ack_btn.clicked.connect(self._on_ack)
         self._ack_btn.hide()
@@ -147,8 +151,8 @@ class ChatWindow(QWidget):
         self._status_badge.setText(f"  {meta['label']}  ")
         self._status_badge.setStyleSheet(
             f"color: {meta['text']}; background: {meta['badge_bg']};"
-            f" border: 1px solid {meta['border']}; border-radius: 3px;"
-            f" padding: 2px 8px; font-weight: bold; font-size: 8pt; letter-spacing: 1px;"
+            f" border: 1px solid {meta['border']}; border-radius: 4px;"
+            f" padding: 3px 10px; font-weight: bold; font-size: 8pt; letter-spacing: 2px;"
         )
         self._sep.setStyleSheet(f"background: {meta['border']};")
 
@@ -228,10 +232,11 @@ class ChatWindow(QWidget):
         meta = self._status_meta
         rect = self.rect().adjusted(1, 1, -1, -1)
 
-        # 그라디언트 배경 (좌상 → 우하)
+        # 그라디언트 배경 (좌상 → 우하, 3단계 깊이)
         grad = QLinearGradient(0, 0, rect.width(), rect.height())
         grad.setColorAt(0.0, QColor(meta["bg"]))
-        grad.setColorAt(1.0, QColor(meta["bg2"]))
+        grad.setColorAt(0.5, QColor(meta["bg2"]))
+        grad.setColorAt(1.0, QColor(meta["bg"]).darker(120))
         painter.setBrush(QBrush(grad))
 
         # 테두리 (DEVIATION 맥동 효과)
@@ -241,4 +246,22 @@ class ChatWindow(QWidget):
         painter.setPen(QPen(border, 1.5))
 
         painter.drawRoundedRect(rect, RADIUS_MD, RADIUS_MD)
+
+        # 상태 악센트 상단 바
+        accent = QColor(meta["accent"])
+        accent.setAlphaF(0.7)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(accent))
+        painter.drawRoundedRect(
+            rect.left() + 8, rect.top() + 2,
+            rect.width() - 16, 2,
+            1, 1,
+        )
+
+        # 스캔라인 오버레이
+        draw_scanlines(painter, rect)
+
+        # 코너 브라켓
+        draw_corner_brackets(painter, rect, meta["accent"], size=16, width=1.2)
+
         painter.end()
